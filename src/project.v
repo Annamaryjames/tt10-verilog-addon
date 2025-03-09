@@ -16,11 +16,32 @@ module tt_um_addon (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  //assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-    assign uo_out[0]=ui_in[0]^ui_in[1];
-    assign uo_out[1]=ui_in[0]&ui_in[1];
-    assign uo_out[7:2]=6'b0;
+    wire [7:0] A = ui_in;      // First operand
+    wire [7:0] B = uio_in;     // Second operand
+    wire Cin = 1'b0;           // Carry-in (set to 0)
+    wire [7:0] Sum;
+    wire Cout;
+
+    // Generate and Propagate signals
+    wire [7:0] G, P, C;
+    assign G = A & B;  // Generate
+    assign P = A ^ B;  // Propagate
+
+    // Carry computation using prefix tree
+    assign C[0] = Cin;
+    assign C[1] = G[0] | (P[0] & C[0]);
+    assign C[2] = G[1] | (P[1] & G[0]) | (P[1] & P[0] & C[0]);
+    assign C[3] = G[2] | (P[2] & G[1]) | (P[2] & P[1] & G[0]) | (P[2] & P[1] & P[0] & C[0]);
+    assign C[4] = G[3] | (P[3] & G[2]) | (P[3] & P[2] & G[1]) | (P[3] & P[2] & P[1] & G[0]) | (P[3] & P[2] & P[1] & P[0] & C[0]);
+    assign C[5] = G[4] | (P[4] & G[3]) | (P[4] & P[3] & G[2]) | (P[4] & P[3] & P[2] & G[1]) | (P[4] & P[3] & P[2] & P[1] & G[0]) | (P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
+    assign C[6] = G[5] | (P[5] & G[4]) | (P[5] & P[4] & G[3]) | (P[5] & P[4] & P[3] & G[2]) | (P[5] & P[4] & P[3] & P[2] & G[1]) | (P[5] & P[4] & P[3] & P[2] & P[1] & G[0]) | (P[5] & P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
+    assign C[7] = G[6] | (P[6] & G[5]) | (P[6] & P[5] & G[4]) | (P[6] & P[5] & P[4] & G[3]) | (P[6] & P[5] & P[4] & P[3] & G[2]) | (P[6] & P[5] & P[4] & P[3] & P[2] & G[1]) | (P[6] & P[5] & P[4] & P[3] & P[2] & P[1] & G[0]) | (P[6] & P[5] & P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
+    assign Cout = G[7] | (P[7] & C[7]);
+
+    // Sum computation
+    assign Sum = P ^ C;
+
+    assign uo_out = Sum;   // Output the sum
   assign uio_out = 0;
   assign uio_oe  = 0;
 
