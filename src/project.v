@@ -6,10 +6,10 @@
 `default_nettype none
 
 module tt_um_addon (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
+    input  wire [7:0] ui_in,    // Dedicated inputs (A)
+    output wire [7:0] uo_out,   // Dedicated outputs (Sum)
+    input  wire [7:0] uio_in,   // IOs: Input path (B)
+    output wire [7:0] uio_out,  // IOs: Output path (Cout)
     output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
     input  wire       clk,      // clock
@@ -23,7 +23,8 @@ module tt_um_addon (
     wire Cout;
 
     // Generate and Propagate signals
-    wire [7:0] G, P, C;
+    wire [7:0] G, P;
+    wire [8:0] C;  // Carry should be 9 bits to store C[8]
     assign G = A & B;  // Generate
     assign P = A ^ B;  // Propagate
 
@@ -36,18 +37,19 @@ module tt_um_addon (
     assign C[5] = G[4] | (P[4] & C[4]);
     assign C[6] = G[5] | (P[5] & C[5]);
     assign C[7] = G[6] | (P[6] & C[6]);
-    assign Cout = G[7] | (P[7] & C[7]); 
+    assign C[8] = G[7] | (P[7] & C[7]);  // Carry-out
 
     // Sum computation
-    assign Sum = P ^ C;
-    // Assign outputs
-    assign uo_out[6:0] = Sum[6:0]; // Sum bits
-    assign uo_out[7] = Cout;  
-    // Unused outputs
-    assign uio_out = 8'b00000000;
-    assign uio_oe  = 8'b00000000;
+    assign Sum = P ^ C[7:0];
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+    // Assign outputs
+    assign uo_out = Sum;      // Assign all 8 Sum bits
+    assign uio_out[0] = C[8]; // Assign Carry-out
+    assign uio_out[7:1] = 7'b0000000; // Unused outputs set to 0
+    assign uio_oe[0] = 1'b1;  // Enable uio_out[0] as output
+    assign uio_oe[7:1] = 7'b0000000; // Other pins remain inputs
+
+    // List all unused inputs to prevent warnings
+    wire _unused = &{ena, clk, rst_n, 1'b0};
 
 endmodule
