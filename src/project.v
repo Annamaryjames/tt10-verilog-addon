@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2024 Anna
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -46,10 +46,9 @@ module tt_um_addon (
     assign uo_out = Sum;      // Assign all 8 Sum bits
     assign uio_out[0] = C[8]; // Assign Carry-out
     assign uio_out[7:1] = 7'b0000000; // Unused outputs set to 0
-    assign uio_oe[0] = 1'b1;  // Enable uio_out[0] as output
-    assign uio_oe[7:1] = 7'b0000000; // Other pins remain inputs
+    assign uio_oe = 8'b00000001;  // Enable uio_out[0] as output, others as input
 
     // List all unused inputs to prevent warnings
-    wire _unused = &{ena, clk, rst_n, 1'b0};
+    wire _unused = &{ena, clk, rst_n};
 
 endmodule
