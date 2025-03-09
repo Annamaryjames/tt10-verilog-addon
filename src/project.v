@@ -30,20 +30,22 @@ module tt_um_addon (
     // Carry computation using prefix tree
     assign C[0] = Cin;
     assign C[1] = G[0] | (P[0] & C[0]);
-    assign C[2] = G[1] | (P[1] & G[0]) | (P[1] & P[0] & C[0]);
-    assign C[3] = G[2] | (P[2] & G[1]) | (P[2] & P[1] & G[0]) | (P[2] & P[1] & P[0] & C[0]);
-    assign C[4] = G[3] | (P[3] & G[2]) | (P[3] & P[2] & G[1]) | (P[3] & P[2] & P[1] & G[0]) | (P[3] & P[2] & P[1] & P[0] & C[0]);
-    assign C[5] = G[4] | (P[4] & G[3]) | (P[4] & P[3] & G[2]) | (P[4] & P[3] & P[2] & G[1]) | (P[4] & P[3] & P[2] & P[1] & G[0]) | (P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
-    assign C[6] = G[5] | (P[5] & G[4]) | (P[5] & P[4] & G[3]) | (P[5] & P[4] & P[3] & G[2]) | (P[5] & P[4] & P[3] & P[2] & G[1]) | (P[5] & P[4] & P[3] & P[2] & P[1] & G[0]) | (P[5] & P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
-    assign C[7] = G[6] | (P[6] & G[5]) | (P[6] & P[5] & G[4]) | (P[6] & P[5] & P[4] & G[3]) | (P[6] & P[5] & P[4] & P[3] & G[2]) | (P[6] & P[5] & P[4] & P[3] & P[2] & G[1]) | (P[6] & P[5] & P[4] & P[3] & P[2] & P[1] & G[0]) | (P[6] & P[5] & P[4] & P[3] & P[2] & P[1] & P[0] & C[0]);
-    assign Cout = G[7] | (P[7] & C[7]);
+    assign C[2] = G[1] | (P[1] & C[1]);
+    assign C[3] = G[2] | (P[2] & C[2]);
+    assign C[4] = G[3] | (P[3] & C[3]);
+    assign C[5] = G[4] | (P[4] & C[4]);
+    assign C[6] = G[5] | (P[5] & C[5]);
+    assign C[7] = G[6] | (P[6] & C[6]);
+    assign Cout = G[7] | (P[7] & C[7]); 
 
     // Sum computation
     assign Sum = P ^ C;
-
-    assign uo_out = Sum;   // Output the sum
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+    // Assign outputs
+    assign uo_out[6:0] = Sum[6:0]; // Sum bits
+    assign uo_out[7] = Cout;  
+    // Unused outputs
+    assign uio_out = 8'b00000000;
+    assign uio_oe  = 8'b00000000;
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, clk, rst_n, 1'b0};
