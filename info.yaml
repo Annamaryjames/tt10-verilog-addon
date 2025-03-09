@@ -1,56 +1,54 @@
-# Tiny Tapeout project information
-project:
-  title:        "koggestone adder demo"      # Project title
-  author:       "anna"      # Your name
-  discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "perform addition"      # One line description of what your project does
-  language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+/*
+ * Copyright (c) 2024 Anna
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-  # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "2x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+`default_nettype none
 
-  # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_addon"
+module tt_um_addon (
+    input  wire [7:0] ui_in,    // Dedicated inputs (A)
+    output wire [7:0] uo_out,   // Dedicated outputs (Sum)
+    input  wire [7:0] uio_in,   // IOs: Input path (B)
+    output wire [7:0] uio_out,  // IOs: Output path (Cout)
+    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
+    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
+    input  wire       clk,      // clock
+    input  wire       rst_n     // reset_n - low to reset
+);
 
-  # List your project's source files here.
-  # Source files must be in ./src and you must list each source file separately, one per line.
-  # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
-  source_files:
-    - "project.v"
+    wire [7:0] A = ui_in;      // First operand
+    wire [7:0] B = uio_in;     // Second operand
+    wire Cin = 1'b0;           // Carry-in (set to 0)
+    wire [7:0] Sum;
+    wire Cout;
 
-# The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
-# This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
-pinout:
-  # Inputs
-  ui[0]: "A[0]"
-  ui[1]: "A[1]"
-  ui[2]: "A[2]"
-  ui[3]: "A[3]"
-  ui[4]: "A[4]"
-  ui[5]: "A[5]"
-  ui[6]: "A[6]"
-  ui[7]: "A[7]"
+    // Generate and Propagate signals
+    wire [7:0] G, P;
+    wire [8:0] C;  // Carry should be 9 bits to store C[8]
+    assign G = A & B;  // Generate
+    assign P = A ^ B;  // Propagate
 
-  # Outputs
-  uo[0]: "Sum[0]"
-  uo[1]: "Sum[1]"
-  uo[2]: "Sum[2]"
-  uo[3]: "Sum[3]"
-  uo[4]: "Sum[4]"
-  uo[5]: "Sum[5]"
-  uo[6]: "Sum[6]"
-  uo[7]: "Sum[7]"
+    // Carry computation using prefix tree
+    assign C[0] = Cin;
+    assign C[1] = G[0] | (P[0] & C[0]);
+    assign C[2] = G[1] | (P[1] & C[1]);
+    assign C[3] = G[2] | (P[2] & C[2]);
+    assign C[4] = G[3] | (P[3] & C[3]);
+    assign C[5] = G[4] | (P[4] & C[4]);
+    assign C[6] = G[5] | (P[5] & C[5]);
+    assign C[7] = G[6] | (P[6] & C[6]);
+    assign C[8] = G[7] | (P[7] & C[7]);  // Carry-out
 
-  # Bidirectional pins
-  uio[0]: "Cout"
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
-  uio[4]: ""
-  uio[5]: ""
-  uio[6]: ""
-  uio[7]: ""
+    // Sum computation
+    assign Sum = P ^ C[7:0];
 
-# Do not change!
-yaml_version: 6
+    // Assign outputs
+    assign uo_out = Sum;      // Assign all 8 Sum bits
+    assign uio_out[0] = C[8]; // Assign Carry-out
+    assign uio_out[7:1] = 7'b0000000; // Unused outputs set to 0
+    assign uio_oe = 8'b00000001;  // Enable uio_out[0] as output, others as input
+
+    // List all unused inputs to prevent warnings
+    wire _unused = &{ena, clk, rst_n};
+
+endmodule
