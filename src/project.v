@@ -18,9 +18,33 @@ module tt_um_addon (
 
   // All output pins must be assigned. If not used, assign to 0.
 //  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-    assign uo_out[0] = ui_in[0] ^ ui_in[1] ^ ui_in[2];
-    assign uo_out[1] = ( ui_in[0] & ui_in[1] ) | (ui_in[1] & ui_in[2] ) | (ui_in[0] & ui_in[2] );
-    assign uo_out[7:2] = 6'b0;
+   
+    // Define input bits
+    wire [1:0] A, B;
+    wire Cin;
+    assign A   = ui_in[1:0];  // A[1:0]
+    assign B   = ui_in[3:2];  // B[1:0]
+    assign Cin = ui_in[4];    // Carry-in
+
+    // Generate (G) and Propagate (P) signals
+    wire [1:0] G, P;
+    assign G = A & B;     // Generate: G[i] = A[i] & B[i]
+    assign P = A ^ B;     // Propagate: P[i] = A[i] ^ B[i]
+
+    // Carry computation
+    wire C1, Cout;
+    assign C1   = G[0] | (P[0] & Cin);
+    assign Cout = G[1] | (P[1] & C1);
+
+    // Sum computation
+    wire [1:0] Sum;
+    assign Sum[0] = P[0] ^ Cin;
+    assign Sum[1] = P[1] ^ C1;
+
+    // Assign outputs (Sum[1:0] and Carry-out)
+    assign uo_out[1:0] = Sum;   // Sum[1:0]
+    assign uo_out[2]   = Cout;  // Carry-out
+    assign uo_out[7:3] = 5'b0; 
   assign uio_out = 0;
   assign uio_oe  = 0;
 
