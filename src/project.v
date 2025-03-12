@@ -20,31 +20,31 @@ module tt_um_addon (
 //  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
    
     // Define input bits
-    wire [1:0] A, B;
+    wire [2:0] A, B;
     wire Cin;
-    assign A   = ui_in[1:0];  // A[1:0]
-    assign B   = ui_in[3:2];  // B[1:0]
-    assign Cin = ui_in[4];    // Carry-in
+    assign A   = ui_in[2:0];  // A[2:0]
+    assign B   = ui_in[5:3];  // B[2:0]
+    assign Cin = ui_in[6];    // Carry-in
 
     // Generate (G) and Propagate (P) signals
-    wire [1:0] G, P;
+    wire [2:0] G, P;
     assign G = A & B;     // Generate: G[i] = A[i] & B[i]
     assign P = A ^ B;     // Propagate: P[i] = A[i] ^ B[i]
 
-    // Carry computation
-    wire C1, Cout;
-    assign C1   = G[0] | (P[0] & Cin);
-    assign Cout = G[1] | (P[1] & C1);
+    // Carry computation using Kogge-Stone structure
+    wire [2:0] C;
+    assign C[0] = Cin;
+    assign C[1] = G[0] | (P[0] & C[0]);
+    assign C[2] = G[1] | (P[1] & G[0]) | (P[1] & P[0] & C[0]);
+    assign uo_out[3] = G[2] | (P[2] & G[1]) | (P[2] & P[1] & G[0]) | (P[2] & P[1] & P[0] & C[0]);
 
     // Sum computation
-    wire [1:0] Sum;
-    assign Sum[0] = P[0] ^ Cin;
-    assign Sum[1] = P[1] ^ C1;
+    wire [2:0] Sum;
+    assign Sum = P ^ C;
 
-    // Assign outputs (Sum[1:0] and Carry-out)
-    assign uo_out[1:0] = Sum;   // Sum[1:0]
-    assign uo_out[2]   = Cout;  // Carry-out
-    assign uo_out[7:3] = 5'b0; 
+    // Assign outputs (Sum[2:0] and Carry-out)
+    assign uo_out[2:0] = Sum;   // Sum[2:0]
+    assign uo_out[7:4] = 4'b0;  // Unused bits set to 0
   assign uio_out = 0;
   assign uio_oe  = 0;
 
